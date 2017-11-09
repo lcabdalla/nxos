@@ -1,0 +1,62 @@
+############################################################
+#  FEATURES
+############################################################
+
+feature telnet
+feature lacp
+
+hostname ACCESS-N93180-2
+
+############################################################
+#  VLANS
+############################################################
+
+vlan 10
+  name TEST-VLAN-10
+!
+vlan 20
+  name TEST-VLAN-20
+exit
+
+############################################################
+#  L2 INTERFACES
+############################################################
+
+interface Ethx/x
+ description CORE-N7018-1
+ switchport
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+ channel-group 1 mode active
+ no shutdown
+!
+interface Ethx/x
+ description CORE-N7018-2
+ switchport
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+ channel-group 1 mode active
+ no shutdown
+!
+interface Port-channel1
+ description UPLINK TO N7K VPC
+ switchport
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+ vpc 1
+ no shutdown
+
+interface Eth1/1
+ switchport
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree port type edge
+ no shutdown
+
+interface Eth1/2
+ switchport
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree port type edge
+ no shutdown
+
