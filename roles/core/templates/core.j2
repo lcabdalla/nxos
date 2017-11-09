@@ -1,0 +1,171 @@
+############################################################
+#  FEATURES
+############################################################
+
+feature telnet
+feature pim
+feature interface-vlan
+feature hsrp
+feature ospf
+feature lacp
+feature vpc
+
+hostname {{ hostname }}
+
+############################################################
+#  VLANS
+############################################################
+
+vlan 10
+  name TEST-VLAN-10
+!
+vlan 20
+  name TEST-VLAN-20
+exit
+
+############################################################
+#  STP
+############################################################
+
+spanning-tree port type edge bpduguard default
+spanning-tree vlan 1-3967 priority 4096
+
+############################################################
+#  VPC
+############################################################
+
+vrf context vpc-keepalive
+
+vpc domain 10
+  role priority {{ vpc_role }}
+  peer-keepalive destination {{ vpc_dst }}  source {{ vpc_src }}  vrf vpc_keepalive
+  peer-gateway
+  peer-switch
+  delay restore 240
+  delay restore interface-vlan 240
+  ip arp synchronize
+
+############################################################
+#  L3 INTERFACES
+############################################################
+
+interface Vlan10
+  no shutdown
+  description VLAN10 - SVI
+  no ip redirects
+  ip address {{ vlan10_ip }}/24
+  ip ospf passive-interface
+  ip router ospf 100 area 0.0.0.0
+  ip pim sparse-mode
+  hsrp version 2
+  hsrp 10 
+    preempt delay minimum 180 
+    priority {{ hsrp_priority }}
+    timers  1  3
+    ip 10.1.1.1
+
+interface Vlan20
+  no shutdown
+  description VLAN20 - SVI
+  no ip redirects
+  ip address {{ vlan20_ip }}/24
+  ip ospf passive-interface
+  ip router ospf 100 area 0.0.0.0
+  ip pim sparse-mode
+  hsrp version 2
+  hsrp 20
+    preempt delay minimum 180 
+    priority {{ hsrp_priority }}
+    timers  1  3
+    ip 10.2.2.1
+
+interface {{ vpc_keepalive_intf }}
+  description VPC PEER KEEPALIVE
+  vrf member vpc-keepalive
+  ip address {{ vpc_src }}/30
+  no shutdown
+  
+interface {{ l3_intf }}
+  description L3 INTERFACE BETWEEN N7K
+  ip address {{ l3_ip }}/30
+  ip router ospf 100 area 0.0.0.0
+  ip ospf network point-to-point
+  ip pim sparse-mode
+  no shutdown
+	
+############################################################
+#  L2 INTERFACES
+############################################################
+
+interface port-channel4090
+  description VPC PEERLINK
+  switchport
+  switchport mode trunk
+  spanning-tree port type network
+  vpc peer-link
+  
+interface {{ vpc_peerlink_intf }}
+  description VPC PEERLINK
+  switchport
+  switchport mode trunk
+  channel-group 4090 mode active
+  no shutdown
+
+interface {{ vpc_peerlink_intf1 }}
+  description VPC PEERLINK
+  switchport
+  switchport mode trunk
+  channel-group 4090 mode active
+  no shutdown
+
+{% for port_channel in dc %}
+  {%- for sub_interface in dc[port_channel]['sub_interfaces']  %}
+interface {{ sub_interface.get('name') }}
+ description {{ sub_interface.get('description') }}
+ switchport
+ switchport mode trunk
+ switchport trunk allowed vlan {{ dc[port_channel]['vlan'] }}
+ channel-group {{ port_channel.split("Port-channel")[1] }} mode active
+ no shutdown
+!
+{% endfor -%}
+
+interface {{ port_channel }}
+ description {{ dc[port_channel]['description'] }}
+ switchport
+ switchport mode trunk
+ switchport trunk allowed vlan {{ dc[port_channel]['vlan'] }}
+ vpc {{ port_channel.split("Port-channel")[1] }}
+ no shutdown
+
+{% endfor %}
+
+############################################################
+#  OSPF
+############################################################
+
+router ospf 100
+  router-id {{ ospf_rid }}
+  log-adjacency-changes
+  auto-cost reference-bandwidth 100000
+
+############################################################
+#  PIM
+############################################################
+
+interface loopback10
+  description ANYCAST RP LOOPBACK
+  ip address 10.255.255.254/32
+  ip router ospf 100 area 0.0.0.0
+  ip pim sparse-mode
+
+interface loopback20
+  description PIM LOOPBACK 
+  ip address {{ pim_loopback }}/32
+  ip router ospf 100 area 0.0.0.0
+  ip pim sparse-mode
+
+ip pim rp-address 10.255.255.254
+ip pim ssm range 232.0.0.0/8
+ip pim anycast-rp 10.255.255.254 10.255.255.252
+ip pim anycast-rp 10.255.255.254 10.255.255.253

@@ -1,0 +1,5 @@
+---
+
+- name: Core config
+  template: src=core.j2 dest=/root/B3/configs/{{ inventory_hostname }}.txt
+

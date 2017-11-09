@@ -1,0 +1,45 @@
+### GENERAL CONFIG ###
+
+hostname: CORE-N7018-2
+
+### VPC CONFIG ###
+
+vpc_role: 16384
+vpc_src: 1.1.1.2
+vpc_dst: 1.1.1.1	
+vpc_keepalive_intf: Ethx/x
+vpc_peerlink_intf: Ethx/x
+vpc_peerlink_intf1: Ethx/x
+
+### L3 CONFIG ###
+
+ospf_rid: 1.1.1.2/32
+
+vlan10_ip: 10.1.1.3
+vlan20_ip: 10.2.2.3
+hsrp_priority: 100
+
+l3_intf: Ethx/x
+l3_ip: 10.0.0.2
+
+pim_loopback: 10.255.255.253
+
+### L2 INTERFACES CONFIG ###
+
+dc:
+  Port-channel101:
+    vlan: 10,20
+    description: ACCESS-N93180-1 - VPC101
+    sub_interfaces:
+      - name: Ethx/x
+        description: ACCESS-N93180-1
+      - name: Ethx/x
+        description: ACCESS-N93180-1
+  Port-channel102:
+    vlan: 10,20
+    description: ACCESS-N93180-2 - VPC102
+    sub_interfaces:
+      - name: Ethx/x
+        description: ACCESS-N93180-2
+      - name: Ethx/x
+        description: ACCESS-N93180-2

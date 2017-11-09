@@ -1,0 +1,7 @@
+---
+- name: Generate configuration files
+  hosts: core
+  gather_facts: false
+  connection: local
+  roles:
+    - core

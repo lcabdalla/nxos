@@ -1,0 +1,12 @@
+
+### L2 INTERFACES CONFIG ###
+
+dc:
+  Port-channel1:
+    vlan: 10,20
+    description: UPLINK TO N7K VPC
+    sub_interfaces:
+      - name: Ethx/x
+        description: CORE-N7018-1
+      - name: Ethx/x
+        description: CORE-N7018-2

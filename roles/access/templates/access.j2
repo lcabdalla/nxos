@@ -1,0 +1,59 @@
+############################################################
+#  FEATURES
+############################################################
+
+feature telnet
+feature lacp
+
+hostname {{ inventory_hostname }}
+
+############################################################
+#  VLANS
+############################################################
+
+vlan 10
+  name TEST-VLAN-10
+!
+vlan 20
+  name TEST-VLAN-20
+exit
+
+############################################################
+#  L2 INTERFACES
+############################################################
+
+{% for port_channel in dc %}
+  {%- for sub_interface in dc[port_channel]['sub_interfaces']  %}
+interface {{ sub_interface.get('name') }}
+ description {{ sub_interface.get('description') }}
+ switchport
+ switchport mode trunk
+ switchport trunk allowed vlan {{ dc[port_channel]['vlan'] }}
+ channel-group {{ port_channel.split("Port-channel")[1] }} mode active
+ no shutdown
+!
+{% endfor -%}
+
+interface {{ port_channel }}
+ description {{ dc[port_channel]['description'] }}
+ switchport
+ switchport mode trunk
+ switchport trunk allowed vlan {{ dc[port_channel]['vlan'] }}
+ vpc {{ port_channel.split("Port-channel")[1] }}
+ no shutdown
+{% endfor %}
+
+interface Eth1/1
+ switchport
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree port type edge
+ no shutdown
+
+interface Eth1/2
+ switchport
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree port type edge
+ no shutdown
+
